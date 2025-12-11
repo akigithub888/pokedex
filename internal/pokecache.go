@@ -6,7 +6,7 @@ import (
 )
 
 type cacheEntry struct {
-	createdAT time.Time
+	createdAt time.Time
 	val       []byte
 }
 
@@ -32,7 +32,7 @@ func (c *Cache) Add(key string, value []byte) {
 
 	c.store[key] = cacheEntry{
 		val:       value,
-		createdAT: time.Now(),
+		createdAt: time.Now(),
 	}
 }
 
@@ -57,7 +57,7 @@ func (c *Cache) reapLoop() {
 
 		now := time.Now()
 		for key, entry := range c.store {
-			if now.Sub(entry.createdAT) > c.interval {
+			if now.Sub(entry.createdAt) > c.interval {
 				delete(c.store, key)
 			}
 		}
