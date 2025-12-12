@@ -24,6 +24,15 @@ func NewClient() *Client {
 	}
 }
 
+type LocationArea struct {
+	Name              string `json:"name"`
+	PokemonEncounters []struct {
+		Pokemon struct {
+			Name string `json:"name"`
+		} `json:"pokemon"`
+	} `json:"pokemon_encounters"`
+}
+
 type LocationAreaList struct {
 	Count    int                      `json:"count"`
 	Next     *string                  `json:"next"`
@@ -66,6 +75,36 @@ func (c *Client) ListLocationAreas(pageURL string) (*LocationAreaList, error) {
 	c.cache.Add(pageURL, body)
 
 	var data LocationAreaList
+	if err := json.Unmarshal(body, &data); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+func (c *Client) GetLocationArea(name string) (*LocationArea, error) {
+	url := c.baseURL + "/location-area/" + name
+	if data, ok := c.cache.Get(url); ok {
+		var cached LocationArea
+		if err := json.Unmarshal(data, &cached); err == nil {
+			return &cached, nil
+		}
+	}
+	res, err := c.httpClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected HTTP status: %s", res.Status)
+	}
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	c.cache.Add(url, body)
+
+	var data LocationArea
 	if err := json.Unmarshal(body, &data); err != nil {
 		return nil, err
 	}
